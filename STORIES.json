@@ -1,0 +1,46 @@
+{
+  "stories": [
+    {
+      "id": "the_raven",
+      "title": "The Raven",
+      "author": "Edgar Allan Poe",
+      "file": "texts/the_raven.txt"
+    },
+    {
+      "id": "great_expectations",
+      "title": "Great Expectations",
+      "author": "Charles Dickens",
+      "file": "texts/great_expectations.txt"
+    },
+    {
+      "id": "the_road_not_taken",
+      "title": "The Road Not Taken",
+      "author": "Robert Frost",
+      "file": "texts/the_road_not_taken.txt"
+    },
+    {
+      "id": "moby_dick",
+      "title": "Moby Dick",
+      "author": "Herman Melville",
+      "file": "texts/moby_dick.txt"
+    },
+    {
+      "id": "pride_and_prejudice",
+      "title": "Pride and Prejudice",
+      "author": "Jane Austen",
+      "file": "texts/pride_and_prejudice.txt"
+    },
+    {
+      "id": "michael_shament",
+      "title": "BIG FAT MICHAEL",
+      "author": "Liel The King",
+      "file": "texts/michael_michael_michael.txt"
+    },
+    {
+      "id": "idk",
+      "title": "The Unknown",
+      "author": "Liel The King",
+      "file": "texts/idk.txt"
+    }
+  ]
+}

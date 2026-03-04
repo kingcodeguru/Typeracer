@@ -5,49 +5,11 @@
  * as a local file (file:// protocol) without any server.
  */
 
-'use strict';
 
 /* ===================================================================
    Story data  – add new entries here to add more stories
    =================================================================== */
-const STORIES = [
-  {
-    id: 'the_raven',
-    title: 'The Raven',
-    author: 'Edgar Allan Poe',
-    file: 'texts/the_raven.txt',
-  },
-  {
-    id: 'great_expectations',
-    title: 'Great Expectations',
-    author: 'Charles Dickens',
-    file: 'texts/great_expectations.txt',
-  },
-  {
-    id: 'the_road_not_taken',
-    title: 'The Road Not Taken',
-    author: 'Robert Frost',
-    file: 'texts/the_road_not_taken.txt',
-  },
-  {
-    id: 'moby_dick',
-    title: 'Moby Dick',
-    author: 'Herman Melville',
-    file: 'texts/moby_dick.txt',
-  },
-  {
-    id: 'pride_and_prejudice',
-    title: 'Pride and Prejudice',
-    author: 'Jane Austen',
-    file: 'texts/pride_and_prejudice.txt',
-  },
-  {
-    id: 'michael_shament',
-    title: 'BIG FAT MICHAEL',
-    author: 'Liel The King',
-    file: 'texts/michael_michael_michael.txt',
-  }
-];
+let STORIES = [];
 
 /* ===================================================================
    DOM references
@@ -87,6 +49,7 @@ let storyWords     = [];     // array of word strings from the story
 let words          = [];     // array of word DOM spans
 let currentWordIndex = 0;
 let totalMistakes  = 0;
+let currentPaddingTop = 20;  // matches CSS padding-top
 let lastInputLength = 0;
 let started        = false;
 let finished       = false;
@@ -124,6 +87,22 @@ function fileToTitle(filename) {
     .replace(/\.txt$/, '')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Scrolls the text display so the current word's line is at the top.
+ */
+function updateLineScroll() {
+  const word = words[currentWordIndex];
+  if (!word) return;
+
+  // Calculate the scroll position to put the current line at the top padding
+  const targetScroll = word.offsetTop - currentPaddingTop;
+  
+  textDisplay.scrollTo({
+    top: targetScroll,
+    behavior: 'smooth'
+  });
 }
 
 /* ===================================================================
@@ -214,6 +193,7 @@ function resetState() {
     span.className = 'word untyped';
   });
   if (words.length) words[0].classList.add('cursor');
+  textDisplay.scrollTop = 0;
 }
 
 /* ===================================================================
@@ -294,7 +274,7 @@ function handleWordSubmission(e) {
     // Set cursor on the new current word
     const nextWordSpan = words[currentWordIndex];
     nextWordSpan.classList.add('cursor');
-    nextWordSpan.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    updateLineScroll();
 
   } else {
     // Incorrect word: Do not advance. Mistakes are counted per character in handleRealtimeValidation.
@@ -431,6 +411,11 @@ inputArea.addEventListener('keydown', e => {
   if (e.key === 'Tab') e.preventDefault();
 });
 
+// Update scroll position if window resizes (text reflows)
+window.addEventListener('resize', () => {
+  if (currentStory && !finished) updateLineScroll();
+});
+
 /* ===================================================================
    Initialise
    =================================================================== */
@@ -441,6 +426,16 @@ async function initialize() {
       "Browsers block 'fetch' requests to local files for security.\n" +
       "To load stories from external files, you must run a local web server (e.g., 'python3 -m http.server')."
     );
+  }
+
+  // Fetch the list of stories from STORIES.json
+  try {
+    const response = await fetch('STORIES.json');
+    if (!response.ok) throw new Error('Failed to load STORIES.json');
+    const data = await response.json();
+    STORIES = data.stories;
+  } catch (error) {
+    console.error('Error loading stories:', error);
   }
 
   // Use Promise.all to fetch all story texts in parallel at startup

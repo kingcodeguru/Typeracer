@@ -150,13 +150,15 @@ header h1 {
   border: 1px solid var(--card);
   border-radius: var(--radius);
   padding: 20px 24px;
+  position: relative;
   font-family: var(--font-mono);
   font-size: 1.1rem;
-  line-height: 1.9;
+  line-height: 36px;
+  height: 148px; /* (36px * 3 lines) + 20px top + 20px bottom */
+  overflow: hidden;
   letter-spacing: 0.3px;
   word-break: break-word;
   margin-bottom: 16px;
-  min-height: 120px;
   user-select: none;
 }
 
@@ -227,6 +229,7 @@ header h1 {
 #start-row {
   display: flex;
   justify-content: center;
+  margin-bottom: 20px;
 }
 
 /* ===== Buttons ===== */
