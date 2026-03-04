@@ -16,35 +16,36 @@ const STORIES = [
     title: 'The Raven',
     author: 'Edgar Allan Poe',
     file: 'texts/the_raven.txt',
-    text: 'Once upon a midnight dreary, while I pondered, weak and weary, over many a quaint and curious volume of forgotten lore, while I nodded, nearly napping, suddenly there came a tapping, as of someone gently rapping, rapping at my chamber door. Tis some visitor, I muttered, tapping at my chamber door, only this and nothing more.'
   },
   {
     id: 'great_expectations',
     title: 'Great Expectations',
     author: 'Charles Dickens',
     file: 'texts/great_expectations.txt',
-    text: "My father's family name being Pirrip, and my Christian name Philip, my infant tongue could make of both names nothing longer or more explicit than Pip. So, I called myself Pip, and came to be called Pip. I give Pirrip as my father's family name, on the authority of his tombstone and my sister, Mrs. Joe Gargery, who married the blacksmith."
   },
   {
     id: 'the_road_not_taken',
     title: 'The Road Not Taken',
     author: 'Robert Frost',
     file: 'texts/the_road_not_taken.txt',
-    text: 'Two roads diverged in a yellow wood, and sorry I could not travel both and be one traveler, long I stood and looked down one as far as I could to where it bent in the undergrowth. Then took the other, as just as fair, and having perhaps the better claim, because it was grassy and wanted wear. Though as for that the passing there had worn them really about the same.'
   },
   {
     id: 'moby_dick',
     title: 'Moby Dick',
     author: 'Herman Melville',
     file: 'texts/moby_dick.txt',
-    text: 'Call me Ishmael. Some years ago, never mind how long precisely, having little money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world. It is a way I have of driving off the spleen and regulating the circulation. Whenever I find myself growing grim about the mouth, I take to the sea.'
   },
   {
     id: 'pride_and_prejudice',
     title: 'Pride and Prejudice',
     author: 'Jane Austen',
     file: 'texts/pride_and_prejudice.txt',
-    text: 'It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife. However little known the feelings or views of such a man may be on his first entering a neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he is considered as the rightful property of some one or other of their daughters.'
+  },
+  {
+    id: 'michael_shament',
+    title: 'BIG FAT MICHAEL',
+    author: 'Liel The King',
+    file: 'texts/michael_michael_michael.txt',
   }
 ];
 
@@ -62,6 +63,7 @@ const inputArea   = document.getElementById('input-area');
 
 const wpmEl      = document.getElementById('wpm');
 const accuracyEl = document.getElementById('accuracy');
+const mistakesEl = document.getElementById('mistakes');
 const progressEl = document.getElementById('progress');
 const timerEl    = document.getElementById('timer');
 
@@ -73,6 +75,7 @@ const homeBtn  = document.getElementById('home-btn');
 
 const finalWpmEl      = document.getElementById('final-wpm');
 const finalAccuracyEl = document.getElementById('final-accuracy');
+const finalMistakesEl = document.getElementById('final-mistakes');
 const finalTimeEl     = document.getElementById('final-time');
 const finalStoryEl    = document.getElementById('final-story');
 
@@ -80,7 +83,11 @@ const finalStoryEl    = document.getElementById('final-story');
    Game state
    =================================================================== */
 let currentStory   = null;   // story object
-let chars          = [];     // array of char DOM spans
+let storyWords     = [];     // array of word strings from the story
+let words          = [];     // array of word DOM spans
+let currentWordIndex = 0;
+let totalMistakes  = 0;
+let lastInputLength = 0;
 let started        = false;
 let finished       = false;
 let startTime      = null;
@@ -88,9 +95,9 @@ let timerInterval  = null;
 let elapsedSeconds = 0;
 
 // Typing metrics
-let typedIndex        = 0;   // how far the user has progressed
-let totalKeysPressed  = 0;   // every keydown that produced a character
-let correctKeys       = 0;   // keys that matched the expected character
+let typedCharsCount   = 0;   // total characters in correctly typed words (for WPM)
+let totalTextChars    = 0;   // total characters in the entire story text
+let totalCharsTyped   = 0;   // total characters typed by the user (for accuracy)
 
 /* ===================================================================
    Utility helpers
@@ -151,20 +158,26 @@ function loadStory(story) {
 
 /** Wrap every character of the text in a <span> for per-char highlighting */
 function buildTextDisplay(text) {
+  storyWords = text.trim().split(/\s+/);
+  totalTextChars = text.length;
   textDisplay.innerHTML = '';
-  chars = [];
-  for (let i = 0; i < text.length; i++) {
-    const span = document.createElement('span');
-    span.className = 'char untyped';
-    // Use a non-breaking space so whitespace renders visibly
-    span.textContent = text[i];
-    // Store the expected character
-    span.dataset.char = text[i];
-    textDisplay.appendChild(span);
-    chars.push(span);
-  }
+  words = [];
+  storyWords.forEach(wordStr => {
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'word';
+    for (const char of wordStr) {
+      const charSpan = document.createElement('span');
+      charSpan.className = 'char untyped';
+      charSpan.textContent = char;
+      wordSpan.appendChild(charSpan);
+    }
+    words.push(wordSpan);
+    textDisplay.appendChild(wordSpan);
+    textDisplay.appendChild(document.createTextNode(' ')); // Add space between words
+  });
+
   // Mark the first character as the cursor position
-  if (chars.length) chars[0].classList.add('cursor');
+  if (words.length) words[0].classList.add('cursor');
 }
 
 /* ===================================================================
@@ -175,9 +188,11 @@ function resetState() {
   finished       = false;
   startTime      = null;
   elapsedSeconds = 0;
-  typedIndex     = 0;
-  totalKeysPressed = 0;
-  correctKeys      = 0;
+  currentWordIndex = 0;
+  totalMistakes  = 0;
+  lastInputLength = 0;
+  typedCharsCount = 0;
+  totalCharsTyped = 0;
 
   clearInterval(timerInterval);
   timerInterval = null;
@@ -190,14 +205,15 @@ function resetState() {
 
   wpmEl.textContent      = '0';
   accuracyEl.textContent = '—';
+  mistakesEl.textContent = '0';
   progressEl.textContent = '0%';
   timerEl.textContent    = '0s';
 
   // Reset all character classes
-  chars.forEach(span => {
-    span.className = 'char untyped';
+  words.forEach(span => {
+    span.className = 'word untyped';
   });
-  if (chars.length) chars[0].classList.add('cursor');
+  if (words.length) words[0].classList.add('cursor');
 }
 
 /* ===================================================================
@@ -218,97 +234,133 @@ function startTimer() {
 function updateStats() {
   const minutes = (Date.now() - startTime) / 60000;
 
-  // Standard WPM: typed characters / 5 / elapsed minutes
-  const typedChars = typedIndex;
-  const wpm = minutes > 0 ? Math.round((typedChars / 5) / minutes) : 0;
+  // Standard WPM: (correctly typed characters / 5) / elapsed minutes
+  const wpm = minutes > 0 ? Math.round((typedCharsCount / 5) / minutes) : 0;
   wpmEl.textContent = wpm;
 
   // Accuracy
-  if (totalKeysPressed > 0) {
-    const acc = Math.round((correctKeys / totalKeysPressed) * 100);
+  if (totalCharsTyped > 0) {
+    const correctChars = totalCharsTyped - totalMistakes;
+    const acc = Math.round((correctChars / totalCharsTyped) * 100);
     accuracyEl.textContent = `${acc}%`;
+  } else {
+    accuracyEl.textContent = '—';
   }
 
   // Progress
-  const pct = Math.round((typedIndex / chars.length) * 100);
+  const pct = totalTextChars > 0
+    ? Math.round((typedCharsCount / totalTextChars) * 100)
+    : 0;
   progressEl.textContent = `${pct}%`;
 }
 
 /* ===================================================================
    Input handling
    =================================================================== */
-function handleInput() {
+/**
+ * Handles word submission when the user presses the spacebar.
+ */
+function handleWordSubmission(e) {
+  if (!started || finished || e.key !== ' ') return;
+
+  const typedWord = inputArea.value;
+  const expectedWord = storyWords[currentWordIndex];
+  const currentWordSpan = words[currentWordIndex];
+
+  if (typedWord === expectedWord) {
+    e.preventDefault(); // Prevent space from being typed
+
+    // Correct word
+    typedCharsCount += typedWord.length + 1; // +1 for the space
+
+    // Mark all characters in the word as correct
+    const charSpans = currentWordSpan.querySelectorAll('.char');
+    charSpans.forEach(span => span.className = 'char correct');
+
+    currentWordSpan.classList.remove('cursor');
+
+    // Move to the next word
+    currentWordIndex++;
+    inputArea.value = '';
+    lastInputLength = 0;
+
+    // Check for game completion
+    if (currentWordIndex === storyWords.length) {
+      typedCharsCount--; // Don't count the final space
+      finishGame();
+      return;
+    }
+
+    // Set cursor on the new current word
+    const nextWordSpan = words[currentWordIndex];
+    nextWordSpan.classList.add('cursor');
+    nextWordSpan.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+  } else {
+    // Incorrect word: Do not advance. Mistakes are counted per character in handleRealtimeValidation.
+  }
+}
+
+/**
+ * Provides real-time feedback on the input field for the current word.
+ */
+function handleRealtimeValidation() {
   if (!started || finished) return;
 
-  const typed = inputArea.value;
-  const newLength = typed.length;
+  const typedText = inputArea.value;
+  const expectedWord = storyWords[currentWordIndex];
+  const currentWordSpan = words[currentWordIndex];
 
-  if (newLength === 0) {
-    // User cleared the field – reset all highlighting
-    typedIndex     = 0;
-    totalKeysPressed = 0;
-    correctKeys    = 0;
-    chars.forEach(span => {
-      span.className = 'char untyped';
-    });
-    chars[0].classList.add('cursor');
-    updateStats();
-    return;
-  }
-
-  // Process each character position up to what's been typed
-  let allCorrectSoFar = true;
-  for (let i = 0; i < chars.length; i++) {
-    const span = chars[i];
-    if (i < newLength) {
-      const expected = span.dataset.char;
-      const actual   = typed[i];
-      span.classList.remove('untyped', 'correct', 'incorrect', 'cursor');
-      if (actual === expected) {
-        span.classList.add('correct');
-      } else {
-        span.classList.add('incorrect');
-        allCorrectSoFar = false;
+  // Count mistakes for newly typed characters
+  if (typedText.length > lastInputLength) {
+    totalCharsTyped += typedText.length - lastInputLength;
+    for (let i = lastInputLength; i < typedText.length; i++) {
+      if (typedText[i] !== expectedWord[i]) {
+        totalMistakes++;
+        mistakesEl.textContent = totalMistakes;
       }
-    } else if (i === newLength) {
-      span.className = 'char untyped cursor';
+    }
+  }
+  lastInputLength = typedText.length;
+
+  const charSpans = currentWordSpan.querySelectorAll('.char');
+
+  // 1. Character-level highlighting
+  charSpans.forEach((span, i) => {
+    const char = span.textContent;
+    if (i < typedText.length) {
+      if (typedText[i] === char) {
+        span.className = 'char correct';
+      } else {
+        span.className = 'char incorrect';
+      }
     } else {
       span.className = 'char untyped';
     }
-  }
+  });
 
-  // Count this key press
-  if (newLength > typedIndex) {
-    // Characters were added
-    for (let i = typedIndex; i < newLength; i++) {
-      totalKeysPressed++;
-      if (typed[i] === chars[i].dataset.char) {
-        correctKeys++;
-      }
-    }
-  } else if (newLength < typedIndex) {
-    // Characters were deleted – re-tally from scratch for accuracy
-    totalKeysPressed = 0;
-    correctKeys = 0;
-    for (let i = 0; i < newLength; i++) {
-      totalKeysPressed++;
-      if (typed[i] === chars[i].dataset.char) {
-        correctKeys++;
-      }
-    }
-  }
+  // Auto-submit if it's the last word and correct
+  if (currentWordIndex === storyWords.length - 1 && typedText === expectedWord) {
+    // Update stats
+    typedCharsCount += typedText.length;
 
-  typedIndex = newLength;
-  updateStats();
+    // Mark all characters in the word as correct
+    charSpans.forEach(span => span.className = 'char correct');
 
-  // Scroll the cursor character into view
-  if (typedIndex < chars.length) {
-    chars[typedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }
+    currentWordSpan.classList.remove('cursor');
 
-  // Check for completion: user has typed all characters
-  if (typedIndex === chars.length) {
+    // Finish game
+    currentWordIndex++;
+    inputArea.value = '';
     finishGame();
+    return;
+  }
+
+  // Highlight input box if the current typing is not a valid prefix
+  if (expectedWord.startsWith(typedText)) {
+    inputArea.classList.remove('input-error');
+  } else {
+    inputArea.classList.add('input-error');
   }
 }
 
@@ -333,14 +385,16 @@ function finishGame() {
 
   // Final elapsed time in whole seconds
   elapsedSeconds = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
-  const minutes  = elapsedSeconds / 60;
-  const finalWpm = Math.round((chars.length / 5) / minutes);
-  const finalAcc = totalKeysPressed > 0
-    ? Math.round((correctKeys / totalKeysPressed) * 100)
+  const minutes = elapsedSeconds / 60;
+  const finalWpm = Math.round((typedCharsCount / 5) / minutes);
+  const correctChars = totalCharsTyped - totalMistakes;
+  const finalAcc = totalCharsTyped > 0
+    ? Math.round((correctChars / totalCharsTyped) * 100)
     : 100;
 
   finalWpmEl.textContent      = `${finalWpm} WPM`;
   finalAccuracyEl.textContent = `${finalAcc}%`;
+  finalMistakesEl.textContent = totalMistakes;
   finalTimeEl.textContent     = formatTime(elapsedSeconds);
   finalStoryEl.textContent    = currentStory.title;
 
@@ -369,7 +423,8 @@ homeBtn.addEventListener('click', () => {
   showScreen(selectionScreen);
 });
 
-inputArea.addEventListener('input', handleInput);
+inputArea.addEventListener('keydown', handleWordSubmission);
+inputArea.addEventListener('input', handleRealtimeValidation);
 
 // Prevent Tab from leaving the textarea during gameplay
 inputArea.addEventListener('keydown', e => {
@@ -379,5 +434,32 @@ inputArea.addEventListener('keydown', e => {
 /* ===================================================================
    Initialise
    =================================================================== */
-buildStoryGrid();
-showScreen(selectionScreen);
+async function initialize() {
+  if (window.location.protocol === 'file:') {
+    alert(
+      "⚠️ Security Restriction ⚠️\n\n" +
+      "Browsers block 'fetch' requests to local files for security.\n" +
+      "To load stories from external files, you must run a local web server (e.g., 'python3 -m http.server')."
+    );
+  }
+
+  // Use Promise.all to fetch all story texts in parallel at startup
+  await Promise.all(STORIES.map(async (story) => {
+    try {
+      const response = await fetch(story.file);
+      if (!response.ok) {
+        throw new Error(`Network response was not ok for ${story.file}`);
+      }
+      story.text = await response.text();
+    } catch (error) {
+      console.error('There was a problem fetching the story text:', error);
+      story.text = "Error: Could not load story text."; // Provide fallback
+    }
+  }));
+
+  // Now that all texts are loaded, build the UI
+  buildStoryGrid();
+  showScreen(selectionScreen);
+}
+
+initialize();
