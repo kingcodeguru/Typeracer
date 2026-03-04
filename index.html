@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TypeRacer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/home.css" />
 </head>
 <body>
 
@@ -17,89 +18,6 @@
     <div id="story-grid"></div>
   </div>
 
-  <!-- ===== Game Screen ===== -->
-  <div id="game-screen" class="screen hidden">
-    <div class="game-header">
-      <button id="back-btn" class="btn btn-secondary">← Back</button>
-      <h2 id="story-title"></h2>
-      <button id="reset-btn" class="btn btn-secondary">↺ Reset</button>
-    </div>
-
-    <div id="stats-bar">
-      <div class="stat-box">
-        <span class="stat-label">WPM</span>
-        <span id="wpm" class="stat-value">0</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Accuracy</span>
-        <span id="accuracy" class="stat-value">—</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Mistakes</span>
-        <span id="mistakes" class="stat-value">0</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Progress</span>
-        <span id="progress" class="stat-value">0%</span>
-      </div>
-      <div class="stat-box">
-        <span class="stat-label">Time</span>
-        <span id="timer" class="stat-value">0s</span>
-      </div>
-    </div>
-
-    <div id="input-wrapper">
-      <textarea
-        id="input-area"
-        placeholder="Click Start to begin typing…"
-        disabled
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-      ></textarea>
-    </div>
-
-    <div id="start-row">
-      <button id="start-btn" class="btn btn-primary">▶ Start</button>
-    </div>
-
-    <div id="text-display" aria-label="Text to type"></div>
-  </div>
-
-  <!-- ===== Results Screen ===== -->
-  <div id="results-screen" class="screen hidden">
-    <div class="results-card">
-      <h2>🏁 Finished!</h2>
-      <table class="results-table">
-        <tr>
-          <td>WPM</td>
-          <td id="final-wpm" class="result-value"></td>
-        </tr>
-        <tr>
-          <td>Accuracy</td>
-          <td id="final-accuracy" class="result-value"></td>
-        </tr>
-        <tr>
-          <td>Mistakes</td>
-          <td id="final-mistakes" class="result-value"></td>
-        </tr>
-        <tr>
-          <td>Time</td>
-          <td id="final-time" class="result-value"></td>
-        </tr>
-        <tr>
-          <td>Story</td>
-          <td id="final-story" class="result-value"></td>
-        </tr>
-      </table>
-      <div class="results-actions">
-        <button id="retry-btn" class="btn btn-primary">↺ Try Again</button>
-        <button id="home-btn" class="btn btn-secondary">🏠 Choose Story</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
+  <script src="js/home.js" type="module"></script>
 </body>
 </html>
