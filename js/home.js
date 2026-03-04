@@ -10,23 +10,23 @@ async function initialize() {
   }
 
   try {
-    console.log('A');
     const response = await fetch('data/STORIES.json');
-    console.log('B');
     if (!response.ok) throw new Error('Failed to load STORIES.json');
-    console.log('C');
     const data = await response.json();
-    console.log('D');
-    const stories = data.stories;
-    console.log(`Loaded ${stories.length} stories`);
+    let stories = data.stories;
+
+    // Load custom stories from localStorage
+    const customStories = JSON.parse(localStorage.getItem('typeracer_custom_stories') || '[]');
+    stories = [...stories, ...customStories];
+
     // Fetch text previews to count words
     await Promise.all(stories.map(async (story) => {
       try {
-        const res = await fetch(story.file);
-        if (res.ok) {
-          story.text = await res.text();
-        } else {
-          story.text = "";
+        if (story.file) {
+          const res = await fetch(story.file);
+          if (res.ok) {
+            story.text = await res.text();
+          }
         }
       } catch (e) {
         story.text = "";

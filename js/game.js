@@ -257,12 +257,19 @@ async function initGame() {
   try {
     const response = await fetch('data/STORIES.json');
     const data = await response.json();
-    const story = data.stories.find(s => s.id === storyId);
+    
+    // Load custom stories from localStorage
+    const customStories = JSON.parse(localStorage.getItem('typeracer_custom_stories') || '[]');
+    const allStories = [...data.stories, ...customStories];
+
+    const story = allStories.find(s => s.id === storyId);
 
     if (!story) throw new Error('Story not found');
 
-    const textRes = await fetch(story.file);
-    story.text = await textRes.text();
+    if (story.file) {
+      const textRes = await fetch(story.file);
+      story.text = await textRes.text();
+    }
     currentStory = story;
     storyTitle.textContent = story.title;
     buildTextDisplay(story.text.trim());

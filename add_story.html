@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TypeRacer - Add Story</title>
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/add_story.css" />
+</head>
+<body>
+  <div class="screen">
+    <header>
+      <h1>Add New Story</h1>
+    </header>
+    <form id="add-story-form" class="story-form">
+      <div class="form-group">
+        <label for="title">Story Title</label>
+        <input type="text" id="title" required />
+      </div>
+      <div class="form-group">
+        <label for="author">Author</label>
+        <input type="text" id="author" required />
+      </div>
+      <div class="form-group">
+        <label for="text">Story Text</label>
+        <textarea id="text" required></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Story</button>
+      </div>
+    </form>
+  </div>
+  <script src="js/add_story.js" type="module"></script>
+</body>
+</html>
